@@ -94,7 +94,7 @@ namespace SunSync
 
             upctl = new Qiniu.IO.Model.UploadController(uploadControl);
 
-            HaltActionButton.IsEnabled = false;
+            //HaltActionButton.IsEnabled = false;
         }
 
         public SQLiteConnection SyncLogDB()
@@ -116,7 +116,7 @@ namespace SunSync
             this.jobId = Qiniu.Util.Hashing.CalcMD5X(jobName);
 
             string myDocPath = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            this.jobsDbPath = System.IO.Path.Combine(myDocPath, "qsunsync", "sync_jobs_v1.6.0.5.db");
+            this.jobsDbPath = System.IO.Path.Combine(myDocPath, "qsunsync", "sync_jobs_v1.db");
             this.jobLogDir = System.IO.Path.Combine(myDocPath, "qsunsync", "logs", jobId);
 
             string localHashDBDir = System.IO.Path.Combine(myDocPath, "qsunsync", "hashdb");
@@ -167,8 +167,7 @@ namespace SunSync
             this.cancelSignal = false;
             this.finishSignal = false;
             this.HaltActionButton.Content = "暂停";
-            this.HaltActionButton.IsEnabled = true;
-            //this.HaltActionButton.IsEnabled = false;
+            //this.HaltActionButton.IsEnabled = true;
             this.ManualFinishButton.IsEnabled = false;
             this.UploadProgressTextBlock.Text = "";
             this.UploadProgressLogTextBlock.Text = "";
@@ -194,20 +193,21 @@ namespace SunSync
             {
                 string fullName = fileInfos[i].FullName.Replace('\\', '/');
                 string relativeName = fullName.Substring(syncSetting.LocalDirectory.Length + 1);
+                string shortName = Path.GetFileName(fileInfos[i].Name);
 
                 files.Add(fullName);                
 
                 switch(syncSetting.FilenameKind)
                 {
-                    case 0:
+                    case (int)FilenameKind.FullPath:
                         keys[i] = syncSetting.SyncPrefix + fullName;
                         break;
-                    case 1:
+                    case (int)FilenameKind.Relative:
                         keys[i] = syncSetting.SyncPrefix + relativeName;
                         break;
-                    case 2:
+                    case (int)FilenameKind.ShortName:
                     default:
-                        keys[i] = syncSetting.SyncPrefix + fileInfos[i].Name;
+                        keys[i] = syncSetting.SyncPrefix + shortName;
                         break;
                 }
 
@@ -220,7 +220,7 @@ namespace SunSync
             string[] skippedSuffixes = this.syncSetting.SkipSuffixes.Split(',');
             for (int i = 0; i < originalCount; ++i)
             {
-                string shortFileName = fileInfos[i].Name;
+                string shortFileName = Path.GetFileName(fileInfos[i].Name);
 
                 if (skip[i]) continue;
                 if (shouldSkipByPrefix(shortFileName, skippedPrefixes))
@@ -373,7 +373,7 @@ namespace SunSync
                 {
                     while ((filePath = sr.ReadLine()) != null)
                     {
-                        if (this.cancelSignal)
+                        if (this.finishSignal)
                         {
                             return;
                         }
@@ -384,20 +384,21 @@ namespace SunSync
 
                             string fullName = fi.FullName.Replace('\\', '/');
                             string relativeName = fullName.Substring(syncSetting.LocalDirectory.Length + 1);
+                            string shortName = Path.GetFileName(fi.Name);
 
-                            string fn = syncSetting.SyncPrefix;
+                            string fn = "";
 
                             switch (syncSetting.FilenameKind)
                             {
-                                case 0:
-                                    fn += fullName;
+                                case (int)FilenameKind.FullPath:
+                                    fn = syncSetting.SyncPrefix + fullName;
                                     break;
-                                case 1:
-                                    fn += relativeName;
+                                case (int)FilenameKind.Relative:
+                                    fn = syncSetting.SyncPrefix + relativeName;
                                     break;
-                                case 2:
+                                case (int)FilenameKind.ShortName:
                                 default:
-                                    fn += fi.Name;
+                                    fn = syncSetting.SyncPrefix + shortName;
                                     break;
                             }
 
@@ -407,7 +408,8 @@ namespace SunSync
                                 SaveKey = fn,
                                 FileHash = Qiniu.Util.ETag.CalcHash(filePath),
                                 Length = fi.Length,
-                                LastUpdate = fi.LastWriteTime.Ticks.ToString()
+                                LastUpdate = fi.LastWriteTime.Ticks.ToString(),
+                                Uploaded = false
                             };
                             this.batchOpFiles.Add(item);
                         }
@@ -418,20 +420,21 @@ namespace SunSync
                             FileInfo fi = new FileInfo(filePath);
                             string fullName = fi.FullName.Replace('\\', '/');
                             string relativeName = fullName.Substring(syncSetting.LocalDirectory.Length + 1);
+                            string shortName = Path.GetFileName(fi.Name);
 
-                            string fn = syncSetting.SyncPrefix;
+                            string fn = "";
 
                             switch (syncSetting.FilenameKind)
                             {
-                                case 0:
-                                    fn += fi.Name;
+                                case (int)FilenameKind.FullPath:
+                                    fn = syncSetting.SyncPrefix + fullName;
                                     break;
-                                case 1:
-                                    fn += relativeName;
+                                case (int)FilenameKind.Relative:
+                                    fn = syncSetting.SyncPrefix + relativeName;
                                     break;
-                                case 2:
+                                case (int)FilenameKind.ShortName:
                                 default:
-                                    fn += fullName;
+                                    fn = syncSetting.SyncPrefix + shortName;
                                     break;
                             }
 
@@ -441,7 +444,8 @@ namespace SunSync
                                 SaveKey = fn,
                                 FileHash = Qiniu.Util.ETag.CalcHash(filePath),
                                 Length = fi.Length,
-                                LastUpdate = fi.LastWriteTime.Ticks.ToString()
+                                LastUpdate = fi.LastWriteTime.Ticks.ToString(),
+                                Uploaded = false
                             };
 
                             this.batchOpFiles.Add(item);
@@ -473,8 +477,16 @@ namespace SunSync
             try
             {
                 WaitHandle.WaitAll(doneEvents);
-                CachedHash.BatchInsertOrUpdate(filesToUpload, localHashDB);
-                SyncLog.BatchInsertOrUpdate(filesToUpload, syncLogDB);
+                List<FileItem> filesUploaded = new List<FileItem>();
+                foreach(var f in filesToUpload)
+                {
+                    if(f.Uploaded)
+                    {
+                        filesUploaded.Add(f);
+                    }
+                }
+                CachedHash.BatchInsertOrUpdate(filesUploaded, localHashDB);
+                SyncLog.BatchInsertOrUpdate(filesUploaded, syncLogDB);
             }
             catch (Exception ex)
             {
@@ -636,10 +648,10 @@ namespace SunSync
         //main job scheduler
         private void runSyncJob(object resumeObject)
         {
-            Dispatcher.Invoke(new Action(delegate ()
-            {
-                HaltActionButton.IsEnabled = false;
-            }));
+            //Dispatcher.Invoke(new Action(delegate ()
+            //{
+            //    HaltActionButton.IsEnabled = false;
+            //}));
 
             bool resume = (bool)resumeObject;
             this.jobStart = DateTime.Now;
@@ -647,11 +659,11 @@ namespace SunSync
             if (!checkOk)
             {
                 this.updateUploadLog("同步发生严重错误，请查看日志信息。");
-                Dispatcher.Invoke(new Action(delegate
-                {
-                    this.ManualFinishButton.IsEnabled = true;
-                    this.HaltActionButton.IsEnabled = false;
-                }));
+                //Dispatcher.Invoke(new Action(delegate
+                //{
+                //    this.ManualFinishButton.IsEnabled = true;
+                //    this.HaltActionButton.IsEnabled = false;
+                //}));
                 return;
             }
             //create optional db
@@ -719,19 +731,20 @@ namespace SunSync
                 this.createDirCache(localSyncDir);
             //}
 
-            if (!this.cancelSignal)
+            //if (!this.cancelSignal)
             {
                 //upload
                 this.updateUploadLog(string.Format("开始同步{0}下所有文件...", localSyncDir));
                 this.processUpload(this.cacheFilePathDone);
             }
 
-            Dispatcher.Invoke(new Action(delegate ()
-            {
-                HaltActionButton.IsEnabled = true;
-            }));
+            //Dispatcher.Invoke(new Action(delegate ()
+            //{
+            //    HaltActionButton.IsEnabled = true;
+            //}));
 
-            if (!this.cancelSignal && this.batchOpFiles.Count > 0)
+            //if (!this.cancelSignal && this.batchOpFiles.Count > 0)
+            if (this.batchOpFiles.Count > 0)
             {
                 //finish the remained
                 this.uploadFiles(this.batchOpFiles);
@@ -763,7 +776,8 @@ namespace SunSync
                     Log.Error(string.Format("job finish close sync log db failed {0}", ex.Message));
                 }
             }
-            if (!this.cancelSignal)
+
+            //if (!this.cancelSignal)
             {
                 //job auto finish, jump to result page
                 DateTime jobEnd = System.DateTime.Now;
@@ -785,6 +799,7 @@ namespace SunSync
             {
                 this.cancelSignal = false;
                 this.HaltActionButton.Content = "暂停";
+                this.ManualFinishButton.IsEnabled = false;
                 //reset
                 //this.resetSyncStatus();
                 //this.HaltActionButton.IsEnabled = true;
@@ -796,6 +811,7 @@ namespace SunSync
             {
                 this.cancelSignal = true;
                 this.HaltActionButton.Content = "继续";
+                this.ManualFinishButton.IsEnabled = true;
                 //Thread checkThread = new Thread(new ThreadStart(delegate
                 //{
                 //    while (!this.finishSignal)
@@ -816,6 +832,9 @@ namespace SunSync
         //manual finish button click
         private void ManualFinishButton_EventHandler(object sender, RoutedEventArgs e)
         {
+            cancelSignal = true;
+            finishSignal = true;
+
             DateTime jobEnd = System.DateTime.Now;
             this.mainWindow.GotoSyncResultPage(this.jobId, jobEnd - this.jobStart, this.syncSetting.OverwriteDuplicate,
                this.fileSkippedCount, this.fileSkippedLogPath,
@@ -1043,6 +1062,11 @@ namespace SunSync
         internal bool checkCancelSignal()
         {
             return this.cancelSignal;
+        }
+
+        internal bool checkFinishSignal()
+        {
+            return this.finishSignal;
         }
 
         //close the log writers

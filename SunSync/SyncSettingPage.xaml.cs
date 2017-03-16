@@ -407,7 +407,7 @@ namespace SunSync
             this.syncSetting.SkipPrefixes = this.SkipPrefixesTextBox.Text.Trim();
             this.syncSetting.SkipSuffixes = this.SkipSuffixesTextBox.Text.Trim();
             this.syncSetting.CheckNewFiles = this.CheckNewFilesCheckBox.IsChecked.Value;
-            this.syncSetting.FilenameKind = fnk1 ? 1 : 2; //fnk0 ? 0 : (fnk1 ? 1 : 2);
+            this.syncSetting.FilenameKind = fnk1 ? (int)FilenameKind.Relative : (int)FilenameKind.ShortName; //fnk0 ? 0 : (fnk1 ? 1 : 2);
             this.syncSetting.OverwriteDuplicate = this.RadioButtonOverwriteDuplicate.IsChecked.Value;
             this.syncSetting.DefaultChunkSize = this.defaultChunkSize;
             this.syncSetting.ChunkUploadThreshold = (int)this.ChunkUploadThresholdSlider.Value * 1024 * 1024;

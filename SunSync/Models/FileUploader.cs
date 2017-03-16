@@ -36,11 +36,12 @@ namespace SunSync.Models
         {
             FileItem item = obj as FileItem;
 
-            if (syncProgressPage.checkCancelSignal())
+            if (syncProgressPage.checkCancelSignal() && item.Length > syncSetting.ChunkUploadThreshold )
             {
                 this.doneEvent.Set();
                 return;
             }
+
             string fileFullPath = item.LocalFile;
             if (!File.Exists(fileFullPath))
             {
@@ -113,6 +114,7 @@ namespace SunSync.Models
             
             if(result.Code == (int)HttpCode.OK)
             {
+                item.Uploaded = true;
                 this.syncProgressPage.updateUploadLog("上传成功 " + fileFullPath);
                 this.syncProgressPage.addFileUploadSuccessLog(string.Format("{0}\t{1}\t{2}", this.syncSetting.TargetBucket,
                         fileFullPath, item.SaveKey));
@@ -120,6 +122,7 @@ namespace SunSync.Models
             }
             else
             {
+                item.Uploaded = false;
                 this.syncProgressPage.updateUploadLog("上传失败 " + fileFullPath + "，" + result.Text);
                 this.syncProgressPage.addFileUploadErrorLog(string.Format("{0}\t{1}\t{2}\t{3}", this.syncSetting.TargetBucket,
                         fileFullPath, item.SaveKey, result.Text));

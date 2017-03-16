@@ -120,8 +120,8 @@
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Qiniu, Version=7.2.11.0, Culture=neutral, PublicKeyToken=2894d75bb9f220bf, processorArchitecture=MSIL">
-      <HintPath>..\packages\Qiniu.Shared.7.2.11\lib\net40\Qiniu.dll</HintPath>
+    <Reference Include="Qiniu, Version=7.2.15.0, Culture=neutral, PublicKeyToken=2894d75bb9f220bf, processorArchitecture=MSIL">
+      <HintPath>..\packages\Qiniu.Shared.7.2.15\lib\net40\Qiniu.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -172,7 +172,6 @@
     <Compile Include="Models\SyncRecord.cs" />
     <Compile Include="Models\SyncSetting.cs" />
     <Compile Include="Models\SystemConfig.cs" />
-    <Compile Include="Models\Tools.cs" />
     <Compile Include="Models\UploadInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -246,6 +245,7 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
+    <None Include="sunsync.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\cloud.png" />

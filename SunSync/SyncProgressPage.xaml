@@ -36,18 +36,34 @@
             </DataGrid>
             <StackPanel Height="50">
                 <TextBlock Name="UploadProgressLogTextBlock" Margin="5" Height="40" FontSize="14" Text="###" TextWrapping="WrapWithOverflow">
-                    
+
                 </TextBlock>
             </StackPanel>
             <StackPanel Height="40" HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 5">
                 <TextBlock Name="UploadProgressTextBlock" FontSize="16" 
                            VerticalAlignment="Center" Margin="10" Text="###"></TextBlock>
             </StackPanel>
-            <StackPanel Margin="5">
-                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                <Button Content="暂停" FontSize="14" Width="120" Height="32" Margin="10 0" Click="HaltActionButton_EventHandler" x:Name="HaltActionButton"></Button>
-                <Button Content="结束" FontSize="14" Width="120" Height="32" Margin="10 0" Click="ManualFinishButton_EventHandler" x:Name="ManualFinishButton"></Button>
+            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                <StackPanel Orientation="Vertical">
+                    <Button Content="暂停" FontSize="14" Width="120" Height="32" Margin="10 0" Click="HaltActionButton_EventHandler" x:Name="HaltActionButton">
+                        <Button.ToolTip>
+                            <ToolTip BorderThickness="0" Background="Black" Foreground="Yellow">
+                                此功能仅对大文件(大于分片阈值)有效
+                            </ToolTip>
+                        </Button.ToolTip>
+                    </Button>
+                    <TextBlock HorizontalAlignment="Center" FontSize="14" Foreground="LightGray">(实验功能)</TextBlock>
                 </StackPanel>
+                <StackPanel Orientation="Vertical">
+                    <Button Content="结束" FontSize="14" Width="120" Height="32" Margin="10 0" Click="ManualFinishButton_EventHandler" x:Name="ManualFinishButton">
+                        <Button.ToolTip>
+                            <ToolTip BorderThickness="0" Background="Black" Foreground="Yellow">
+                                强制结束所有上传中的任务
+                            </ToolTip>
+                        </Button.ToolTip>
+                    </Button>
+                    <TextBlock HorizontalAlignment="Center" FontSize="14" Foreground="LightGray">(实验功能)</TextBlock>
+                </StackPanel>                
             </StackPanel>
         </StackPanel>
     </Grid>

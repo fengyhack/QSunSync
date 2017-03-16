@@ -4,6 +4,13 @@ using System.IO;
 
 namespace SunSync.Models
 {
+    public enum FilenameKind
+    {
+        FullPath = 0,
+        Relative = 1,
+        ShortName = 2,
+    }
+
     public class SyncSetting
     {
         //local directory to sync

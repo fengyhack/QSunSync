@@ -124,10 +124,10 @@ namespace SunSync.Models
 
             bool[] needUpdate = new bool[numItems];
 
-            for(int j=0;j<numItems;++j)
+            for (int j = 0; j < numItems; ++j)
             {
-                string file = fileItems[j].LocalFile; 
-                if(keys.Contains(file))
+                string file = fileItems[j].LocalFile;
+                if (keys.Contains(file))
                 {
                     needUpdate[j] = true;
                 }

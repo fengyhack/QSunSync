@@ -152,5 +152,7 @@ namespace SunSync.Models
 
         public string FileHash { get; set; }
         public string LastUpdate { get; set; }
+
+        public bool Uploaded { get; set; }
     }
 }

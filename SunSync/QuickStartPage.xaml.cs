@@ -41,7 +41,7 @@ namespace SunSync
                     Log.Fatal(string.Format("unable to create my app path {0} due to {1}", myAppPath, ex.Message));
                 }
             }
-            this.jobsDbPath = System.IO.Path.Combine(myDocPath, "qsunsync", "sync_jobs_v1.6.0.5.db");
+            this.jobsDbPath = System.IO.Path.Combine(myDocPath, "qsunsync", "sync_jobs_v1.db");
             this.topBGImages = new List<string>();
             this.topBGImages.Add("Images/qiniu_logo.jpg");
             this.topBGImages.Add("Images/qiniu_logo.jpg");
